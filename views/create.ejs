@@ -1,0 +1,123 @@
+<%- include('partials/header', { title: 'Створення оголошення — Дошка оголошень' }) %>
+
+<div class="container create-page" id="create-page-container">
+  
+  <div class="back-navigation">
+    <a href="/" class="back-link" id="btn-back-home-create">← Повернутися на головну</a>
+  </div>
+
+  <div class="form-wrapper">
+    <div class="form-header">
+      <h1 class="form-title" id="form-heading">Нове оголошення</h1>
+      <p class="form-subtitle">Заповніть форму нижче для розміщення оголошення на дошці</p>
+    </div>
+
+    <form action="/announcements" method="POST" class="announcement-form" id="create-announcement-form">
+      
+      <!-- Category Radio Buttons -->
+      <div class="form-group <%= errors.category ? 'has-error' : '' %>" id="group-category">
+        <label class="group-label">Категорія *</label>
+        <div class="radio-group">
+          <% Object.keys(categoryMap).forEach(key => { %>
+            <label class="radio-label" id="radio-label-<%= key %>">
+              <input 
+                type="radio" 
+                name="category" 
+                value="<%= key %>" 
+                required
+                <%= data.category === key ? 'checked' : '' %>
+              >
+              <span class="radio-custom"></span>
+              <%= categoryMap[key] %>
+            </label>
+          <% }) %>
+        </div>
+        <% if (errors.category) { %>
+          <span class="error-message" id="error-category"><%= errors.category %></span>
+        <% } %>
+      </div>
+
+      <!-- Title Input -->
+      <div class="form-group <%= errors.title ? 'has-error' : '' %>" id="group-title">
+        <label for="input-title">Назва оголошення *</label>
+        <input 
+          type="text" 
+          name="title" 
+          id="input-title" 
+          placeholder="Наприклад: Продам дитячий велосипед" 
+          required 
+          minlength="10" 
+          value="<%= data.title || '' %>"
+        >
+        <small class="helper-text">Мінімум 10 символів</small>
+        <% if (errors.title) { %>
+          <span class="error-message" id="error-title"><%= errors.title %></span>
+        <% } %>
+      </div>
+
+      <!-- Description Textarea -->
+      <div class="form-group <%= errors.description ? 'has-error' : '' %>" id="group-description">
+        <label for="input-description">Детальний опис *</label>
+        <textarea 
+          name="description" 
+          id="input-description" 
+          rows="6" 
+          placeholder="Опишіть ваш товар чи послугу детальніше (стан, розмір, характеристики, умови роботи тощо)..." 
+          required 
+          minlength="20"
+        ><%= data.description || '' %></textarea>
+        <small class="helper-text">Мінімум 20 символів</small>
+        <% if (errors.description) { %>
+          <span class="error-message" id="error-description"><%= errors.description %></span>
+        <% } %>
+      </div>
+
+      <!-- Price Input -->
+      <div class="form-group <%= errors.price ? 'has-error' : '' %>" id="group-price">
+        <label for="input-price">Ціна (₴) *</label>
+        <input 
+          type="number" 
+          name="price" 
+          id="input-price" 
+          placeholder="Вкажіть ціну (0 для безкоштовного)" 
+          required 
+          min="0" 
+          step="any"
+          value="<%= data.price !== undefined ? data.price : '' %>"
+        >
+        <small class="helper-text">Введіть невід'ємне число</small>
+        <% if (errors.price) { %>
+          <span class="error-message" id="error-price"><%= errors.price %></span>
+        <% } %>
+      </div>
+
+      <!-- Contact Info Input -->
+      <div class="form-group <%= errors.contactInfo ? 'has-error' : '' %>" id="group-contact">
+        <label for="input-contact">Контактна інформація *</label>
+        <input 
+          type="text" 
+          name="contactInfo" 
+          id="input-contact" 
+          placeholder="Наприклад: +380971234567, Андрій" 
+          required 
+          minlength="10" 
+          value="<%= data.contactInfo || '' %>"
+        >
+        <small class="helper-text">Контактні дані, телефон або e-mail (мінімум 10 символів)</small>
+        <% if (errors.contactInfo) { %>
+          <span class="error-message" id="error-contact"><%= errors.contactInfo %></span>
+        <% } %>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions-row">
+        <button type="submit" class="btn btn-primary" id="btn-submit-announcement">Опублікувати оголошення</button>
+        <a href="/" class="btn btn-secondary" id="btn-cancel-announcement">Скасувати</a>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<%- include('partials/footer') %>

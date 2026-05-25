@@ -1,0 +1,115 @@
+<%- include('partials/header', { title: 'Дошка оголошень — Головна сторінка' }) %>
+
+<div class="container index-page" id="index-page-container">
+  
+  <div class="hero-section">
+    <h1 class="page-title" id="main-heading">Дошка оголошень</h1>
+    <p class="page-subtitle">Швидкий пошук товарів, послуг та нерухомості</p>
+  </div>
+
+  <!-- Search and Filter Form -->
+  <section class="filters-bar" id="filters-section">
+    <form action="/" method="GET" class="filter-form" id="search-filter-form">
+      <div class="search-group">
+        <input 
+          type="text" 
+          name="search" 
+          id="search-input" 
+          placeholder="Пошук оголошень по назві..." 
+          value="<%= search %>"
+          autocomplete="off"
+        >
+        <% if (search) { %>
+          <a href="/" class="clear-search-btn" title="Очистити пошук">✕</a>
+        <% } %>
+      </div>
+      
+      <div class="sort-group">
+        <label for="sort-select">Сортування:</label>
+        <select name="sort" id="sort-select" onchange="this.form.submit()">
+          <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Новіші спочатку</option>
+          <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Старіші спочатку</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-secondary" id="search-submit-btn">Пошук</button>
+    </form>
+  </section>
+
+  <!-- List of announcements -->
+  <section class="announcements-section" id="announcements-list">
+    <% if (announcements.length === 0) { %>
+      <div class="empty-state" id="no-results">
+        <div class="empty-icon">🔍</div>
+        <h3>Оголошень не знайдено</h3>
+        <p>Спробуйте змінити параметри пошуку або створіть перше оголошення.</p>
+        <a href="/announcements/create" class="btn btn-primary">Створити оголошення</a>
+      </div>
+    <% } else { %>
+      <div class="cards-grid">
+        <% announcements.forEach(ann => { %>
+          <article class="announcement-card" id="card-<%= ann.id %>">
+            <div class="card-header">
+              <span class="category-badge badge-<%= ann.category %>">
+                <%= ann.categoryName %>
+              </span>
+              <span class="card-date">
+                <%= ann.createdAt.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+              </span>
+            </div>
+            
+            <div class="card-body">
+              <h2 class="card-title">
+                <a href="/announcements/<%= ann.id %>"><%= ann.title %></a>
+              </h2>
+              <p class="card-description"><%= ann.shortDescription %></p>
+            </div>
+            
+            <div class="card-footer">
+              <span class="card-price">
+                <% if (ann.price === 0) { %>
+                  <span class="price-free">Безкоштовно</span>
+                <% } else { %>
+                  <%= ann.price.toLocaleString('uk-UA') %> ₴
+                <% } %>
+              </span>
+              <a href="/announcements/<%= ann.id %>" class="btn-link" id="link-details-<%= ann.id %>">Детальніше →</a>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+
+      <!-- Pagination controls -->
+      <% if (totalPages > 1) { %>
+        <nav class="pagination" aria-label="Пагінація сторінок" id="pagination-nav">
+          <!-- Back button -->
+          <% if (page > 1) { %>
+            <a href="/?page=<%= page - 1 %>&search=<%= encodeURIComponent(search) %>&sort=<%= sort %>" class="pag-btn prev" id="pag-prev">← Назад</a>
+          <% } else { %>
+            <span class="pag-btn prev disabled">← Назад</span>
+          <% } %>
+
+          <!-- Page numbers -->
+          <div class="pag-numbers">
+            <% for (let i = 1; i <= totalPages; i++) { %>
+              <% if (i === page) { %>
+                <span class="pag-num active" id="pag-num-<%= i %>"><%= i %></span>
+              <% } else { %>
+                <a href="/?page=<%= i %>&search=<%= encodeURIComponent(search) %>&sort=<%= sort %>" class="pag-num" id="pag-num-<%= i %>"><%= i %></a>
+              <% } %>
+            <% } %>
+          </div>
+
+          <!-- Next button -->
+          <% if (page < totalPages) { %>
+            <a href="/?page=<%= page + 1 %>&search=<%= encodeURIComponent(search) %>&sort=<%= sort %>" class="pag-btn next" id="pag-next">Вперед →</a>
+          <% } else { %>
+            <span class="pag-btn next disabled">Вперед →</span>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

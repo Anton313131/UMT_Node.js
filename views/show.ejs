@@ -1,0 +1,81 @@
+<%- include('partials/header', { title: announcement.title + ' — Деталі оголошення' }) %>
+
+<div class="container show-page" id="show-page-container">
+  
+  <div class="back-navigation">
+    <a href="/" class="back-link" id="btn-back-home">← Повернутися на головну</a>
+  </div>
+
+  <article class="announcement-details" id="details-article">
+    <div class="details-header">
+      <div class="meta-row">
+        <span class="category-badge badge-<%= announcement.category %>" id="details-category">
+          <%= announcement.categoryName %>
+        </span>
+        <span class="details-date" id="details-date">
+          Опубліковано: <%= announcement.createdAt.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+        </span>
+      </div>
+      
+      <h1 class="details-title" id="details-title"><%= announcement.title %></h1>
+      
+      <div class="price-container">
+        <span class="price-label">Ціна:</span>
+        <span class="details-price" id="details-price">
+          <% if (announcement.price === 0) { %>
+            Безкоштовно
+          <% } else { %>
+            <%= announcement.price.toLocaleString('uk-UA') %> ₴
+          <% } %>
+        </span>
+      </div>
+    </div>
+
+    <div class="details-body">
+      <h3 class="section-title">Опис</h3>
+      <p class="details-description" id="details-desc"><%= announcement.description %></p>
+    </div>
+
+    <div class="details-footer">
+      <div class="contact-card" id="details-contact-card">
+        <div class="contact-icon">📞</div>
+        <div class="contact-info-block">
+          <span class="contact-label">Контактна інформація:</span>
+          <span class="contact-value" id="details-contact-value"><%= announcement.contactInfo %></span>
+        </div>
+      </div>
+
+      <div class="actions-block">
+        <button class="btn btn-danger" id="delete-btn">Видалити оголошення</button>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<script>
+  const deleteBtn = document.querySelector('#delete-btn');
+  const announcementId = <%= announcement.id %>;
+
+  deleteBtn.addEventListener('click', async () => {
+    if (!confirm('Ви впевнені, що хочете видалити це оголошення?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/announcements/' + announcementId, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        window.location.href = '/';
+      } else {
+        alert('Помилка при видаленні!');
+      }
+    } catch (error) {
+      alert('Помилка при видаленні!');
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

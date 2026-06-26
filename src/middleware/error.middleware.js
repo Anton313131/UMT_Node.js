@@ -1,8 +1,9 @@
+const { isCelebrateError } = require('celebrate');
 const logger = require('../logger');
 
 // ponytail: single error handler, no error class hierarchy — statusFromError covers needs
 function statusFromError(err) {
-  if (err && err.isValidationError) return 400;
+  if (err && (isCelebrateError(err) || err.isJoi)) return 400;
   if (err && err.code === 'LIMIT_FILE_SIZE') return 413;
   if (err && err.name === 'MulterError') return 400;
   if (err && err.name === 'PrismaClientKnownRequestError') {
@@ -10,6 +11,25 @@ function statusFromError(err) {
     if (err.code === 'P2025') return 404;
   }
   return err.status || 500;
+}
+
+function celebrateErrors(err) {
+  const errors = {};
+  if (isCelebrateError(err)) {
+    for (const [segment, joiError] of err.details.entries()) {
+      for (const d of joiError.details) {
+        const key = (d.context?.key) || (d.path && d.path[0]) || '_';
+        if (!errors[key]) errors[key] = d.message.replace(/"/g, '');
+      }
+    }
+    return errors;
+  }
+  const details = err.details || [];
+  for (const d of details) {
+    const key = (d.context?.key) || (d.path && d.path[0]) || '_';
+    if (!errors[key]) errors[key] = d.message.replace(/"/g, '');
+  }
+  return errors;
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -21,8 +41,8 @@ function errorHandler(err, req, res, next) {
     req.log?.warn({ err: err.message }, 'Request error');
   }
 
-  if (err && err.isValidationError) {
-    return res.status(400).json({ errors: err.errors });
+  if (err && (isCelebrateError(err) || err.isJoi)) {
+    return res.status(400).json({ errors: celebrateErrors(err) });
   }
 
   if (err && err.code === 'P2002') {
@@ -37,11 +57,4 @@ function notFound(req, res) {
   res.status(404).json({ error: 'Not found' });
 }
 
-function validationError(errors) {
-  const err = new Error('Validation failed');
-  err.isValidationError = true;
-  err.errors = errors;
-  return err;
-}
-
-module.exports = { errorHandler, notFound, validationError };
+module.exports = { errorHandler, notFound };

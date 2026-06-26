@@ -1,136 +1,49 @@
-const { validationError } = require('../middleware/error.middleware');
+const { celebrate, Joi, Segments } = require('celebrate');
 
 const CATEGORIES = ['sale', 'rent', 'buy', 'service', 'other'];
 const SORT_FIELDS = ['createdAt', 'price', 'title'];
 const ORDERS = ['asc', 'desc'];
+const OPTS = { abortEarly: false };
 
-function parseAnnouncementFields(body, { partial = false } = {}) {
-  const errors = {};
-  const out = {};
+const announcementSchema = {
+  title: Joi.string().min(5).max(100),
+  description: Joi.string().min(10).max(500),
+  price: Joi.number().min(0),
+  category: Joi.string().valid(...CATEGORIES),
+  contactInfo: Joi.string().min(5).max(100),
+};
 
-  if (!partial || body.title !== undefined) {
-    const title = (body.title || '').trim();
-    if (!title) {
-      errors.title = 'Title is required';
-    } else if (title.length < 5 || title.length > 100) {
-      errors.title = 'Title must be between 5 and 100 characters';
-    } else {
-      out.title = title;
-    }
-  }
+const validateCreate = celebrate({
+  [Segments.BODY]: Joi.object({
+    title: Joi.string().min(5).max(100).required(),
+    description: Joi.string().min(10).max(500).required(),
+    price: Joi.number().min(0).required(),
+    category: Joi.string().valid(...CATEGORIES).required(),
+    contactInfo: Joi.string().min(5).max(100).required(),
+  }),
+}, OPTS);
 
-  if (!partial || body.description !== undefined) {
-    const description = (body.description || '').trim();
-    if (!description) {
-      errors.description = 'Description is required';
-    } else if (description.length < 10 || description.length > 500) {
-      errors.description = 'Description must be between 10 and 500 characters';
-    } else {
-      out.description = description;
-    }
-  }
+const validateUpdate = celebrate({
+  // Partial update: only validate provided fields (image-only updates allowed)
+  [Segments.BODY]: Joi.object(announcementSchema).min(0),
+}, OPTS);
 
-  if (!partial || body.price !== undefined) {
-    const price = Number(body.price);
-    if (body.price === '' || body.price === undefined || Number.isNaN(price)) {
-      errors.price = 'Price is required';
-    } else if (price < 0) {
-      errors.price = 'Price must be a non-negative number';
-    } else {
-      out.price = price;
-    }
-  }
-
-  if (!partial || body.category !== undefined) {
-    if (!body.category) {
-      errors.category = 'Category is required';
-    } else if (!CATEGORIES.includes(body.category)) {
-      errors.category = `Category must be one of: ${CATEGORIES.join(', ')}`;
-    } else {
-      out.category = body.category;
-    }
-  }
-
-  if (!partial || body.contactInfo !== undefined) {
-    const contactInfo = (body.contactInfo || '').trim();
-    if (!contactInfo) {
-      errors.contactInfo = 'Contact info is required';
-    } else if (contactInfo.length < 5 || contactInfo.length > 100) {
-      errors.contactInfo = 'Contact info must be between 5 and 100 characters';
-    } else {
-      out.contactInfo = contactInfo;
-    }
-  }
-
-  return { out, errors };
-}
-
-function validateCreate(req, _res, next) {
-  const { out, errors } = parseAnnouncementFields(req.body, { partial: false });
-  if (Object.keys(errors).length > 0) return next(validationError(errors));
-  req.validated = out;
-  next();
-}
-
-function validateUpdate(req, _res, next) {
-  const { out, errors } = parseAnnouncementFields(req.body, { partial: true });
-  if (Object.keys(req.body).length === 0 && !req.file) {
-    return next(validationError({ body: 'At least one field must be provided' }));
-  }
-  if (Object.keys(errors).length > 0) return next(validationError(errors));
-  req.validated = out;
-  next();
-}
-
-function validateListQuery(req, _res, next) {
-  const errors = {};
-  const q = req.query;
-
-  let page = parseInt(q.page, 10);
-  if (q.page !== undefined) {
-    if (Number.isNaN(page) || page < 1) errors.page = 'page must be a positive integer';
-  } else {
-    page = 1;
-  }
-
-  let limit = parseInt(q.limit, 10);
-  if (q.limit !== undefined) {
-    if (Number.isNaN(limit) || limit < 1) {
-      errors.limit = 'limit must be a positive integer';
-    } else if (limit > 50) {
-      errors.limit = 'limit must not exceed 50';
-    }
-  } else {
-    limit = 5;
-  }
-
-  const search = q.search !== undefined ? String(q.search) : undefined;
-
-  let category = q.category;
-  if (category !== undefined && !CATEGORIES.includes(category)) {
-    errors.category = `category must be one of: ${CATEGORIES.join(', ')}`;
-  }
-
-  const sortBy = q.sortBy || 'createdAt';
-  if (!SORT_FIELDS.includes(sortBy)) {
-    errors.sortBy = `sortBy must be one of: ${SORT_FIELDS.join(', ')}`;
-  }
-
-  const order = q.order || 'desc';
-  if (!ORDERS.includes(order)) {
-    errors.order = `order must be one of: ${ORDERS.join(', ')}`;
-  }
-
-  if (Object.keys(errors).length > 0) return next(validationError(errors));
-
-  req.queryMeta = { page, limit, search, category, sortBy, order };
-  next();
-}
+const validateListQuery = celebrate({
+  [Segments.QUERY]: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(50).default(5),
+    search: Joi.string().allow(''),
+    category: Joi.string().valid(...CATEGORIES),
+    sortBy: Joi.string().valid(...SORT_FIELDS).default('createdAt'),
+    order: Joi.string().valid(...ORDERS).default('desc'),
+  }),
+}, OPTS);
 
 module.exports = {
   CATEGORIES,
+  SORT_FIELDS,
+  ORDERS,
   validateCreate,
   validateUpdate,
   validateListQuery,
-  parseAnnouncementFields,
 };

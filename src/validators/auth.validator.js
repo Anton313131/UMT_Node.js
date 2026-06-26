@@ -1,51 +1,20 @@
-const { validationError } = require('../middleware/error.middleware');
+const { celebrate, Joi, Segments } = require('celebrate');
 
-function validateRegister(body) {
-  const errors = {};
-  const username = (body.username || '').trim();
-  const password = body.password || '';
+const OPTS = { abortEarly: false };
 
-  if (!username) {
-    errors.username = 'Username is required';
-  } else if (username.length < 4 || username.length > 30) {
-    errors.username = 'Username must be between 4 and 30 characters';
-  }
+const validateRegister = celebrate({
+  [Segments.BODY]: Joi.object({
+    username: Joi.string().pattern(/^[a-zA-Z0-9_]+$/).min(4).max(30).required(),
+    name: Joi.string().max(50).allow('', null),
+    password: Joi.string().min(6).max(100).required(),
+  }),
+}, OPTS);
 
-  if (body.name !== undefined && body.name !== null && String(body.name).length > 50) {
-    errors.name = 'Name must be at most 50 characters';
-  }
+const validateLogin = celebrate({
+  [Segments.BODY]: Joi.object({
+    username: Joi.string().required(),
+    password: Joi.string().required(),
+  }),
+}, OPTS);
 
-  if (!password) {
-    errors.password = 'Password is required';
-  } else if (password.length < 6 || password.length > 100) {
-    errors.password = 'Password must be between 6 and 100 characters';
-  }
-
-  return errors;
-}
-
-function validateLogin(body) {
-  const errors = {};
-  if (!body.username || !body.username.trim()) errors.username = 'Username is required';
-  if (!body.password) errors.password = 'Password is required';
-  return errors;
-}
-
-function validateRegisterMiddleware(req, _res, next) {
-  const errors = validateRegister(req.body);
-  if (Object.keys(errors).length > 0) return next(validationError(errors));
-  next();
-}
-
-function validateLoginMiddleware(req, _res, next) {
-  const errors = validateLogin(req.body);
-  if (Object.keys(errors).length > 0) return next(validationError(errors));
-  next();
-}
-
-module.exports = {
-  validateRegister,
-  validateLogin,
-  validateRegisterMiddleware,
-  validateLoginMiddleware,
-};
+module.exports = { validateRegister, validateLogin, Joi };

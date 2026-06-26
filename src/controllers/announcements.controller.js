@@ -4,21 +4,25 @@ const { uploadToCloudinary } = require('../middleware/upload.middleware');
 
 exports.list = async (req, res, next) => {
   try {
-    const { page, limit, search, category, sortBy, order } = req.queryMeta;
+    const { page, limit, search, category, sortBy, order } = req.query;
 
     const where = {};
     if (search) where.title = { contains: search };
     if (category) where.category = category;
 
-    const totalItems = await prisma.announcement.count({ where });
-    const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+    const skip = (page - 1) * limit;
 
-    const data = await prisma.announcement.findMany({
-      where,
-      orderBy: { [sortBy]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const [totalItems, data] = await Promise.all([
+      prisma.announcement.count({ where }),
+      prisma.announcement.findMany({
+        where,
+        orderBy: { [sortBy]: order },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(totalItems / limit));
 
     return res.status(200).json({
       data,
@@ -56,7 +60,7 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const data = { ...req.validated, userId: req.user.id };
+    const data = { ...req.body, userId: req.user.id };
 
     if (req.file) {
       data.imageUrl = await uploadToCloudinary(req.file);
@@ -73,7 +77,7 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const data = { ...req.validated };
+    const data = { ...req.body };
 
     if (req.file) {
       data.imageUrl = await uploadToCloudinary(req.file);

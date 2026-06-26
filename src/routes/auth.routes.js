@@ -3,8 +3,8 @@ const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/auth.controller');
 const { requireAuth } = require('../middleware/auth.middleware');
 const {
-  validateRegisterMiddleware,
-  validateLoginMiddleware,
+  validateRegister,
+  validateLogin,
 } = require('../validators/auth.validator');
 
 const router = express.Router();
@@ -18,7 +18,7 @@ const authLimiter = rateLimit({
 });
 
 /**
- * @openapi
+ * @swagger
  * /auth/register:
  *   post:
  *     tags: [Auth]
@@ -35,10 +35,10 @@ const authLimiter = rateLimit({
  *       409: { description: Username already exists }
  *       429: { description: Too many requests }
  */
-router.post('/register', authLimiter, validateRegisterMiddleware, authController.register);
+router.post('/register', authLimiter, validateRegister, authController.register);
 
 /**
- * @openapi
+ * @swagger
  * /auth/login:
  *   post:
  *     tags: [Auth]
@@ -55,10 +55,10 @@ router.post('/register', authLimiter, validateRegisterMiddleware, authController
  *       401: { description: Invalid credentials }
  *       429: { description: Too many requests }
  */
-router.post('/login', authLimiter, validateLoginMiddleware, authController.login);
+router.post('/login', authLimiter, validateLogin, authController.login);
 
 /**
- * @openapi
+ * @swagger
  * /auth/refresh:
  *   post:
  *     tags: [Auth]
@@ -70,7 +70,7 @@ router.post('/login', authLimiter, validateLoginMiddleware, authController.login
 router.post('/refresh', authLimiter, authController.refresh);
 
 /**
- * @openapi
+ * @swagger
  * /auth/logout:
  *   post:
  *     tags: [Auth]
@@ -81,7 +81,7 @@ router.post('/refresh', authLimiter, authController.refresh);
 router.post('/logout', authController.logout);
 
 /**
- * @openapi
+ * @swagger
  * /auth/me:
  *   get:
  *     tags: [Auth]

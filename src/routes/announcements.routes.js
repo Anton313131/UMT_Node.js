@@ -12,7 +12,7 @@ const {
 const router = express.Router();
 
 /**
- * @openapi
+ * @swagger
  * /announcements:
  *   get:
  *     tags: [Announcements]
@@ -31,7 +31,7 @@ const router = express.Router();
 router.get('/', validateListQuery, controller.list);
 
 /**
- * @openapi
+ * @swagger
  * /announcements/{id}:
  *   get:
  *     tags: [Announcements]
@@ -45,7 +45,7 @@ router.get('/', validateListQuery, controller.list);
 router.get('/:id', controller.getOne);
 
 /**
- * @openapi
+ * @swagger
  * /announcements:
  *   post:
  *     tags: [Announcements]
@@ -66,7 +66,7 @@ router.get('/:id', controller.getOne);
 router.post('/', requireAuth, imageField, validateCreate, controller.create);
 
 /**
- * @openapi
+ * @swagger
  * /announcements/{id}:
  *   patch:
  *     tags: [Announcements]
@@ -98,7 +98,7 @@ router.patch(
 );
 
 /**
- * @openapi
+ * @swagger
  * /announcements/{id}:
  *   delete:
  *     tags: [Announcements]

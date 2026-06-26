@@ -1,0 +1,175 @@
+### Noticeboard API — request examples
+### Base URL
+@baseUrl = http://localhost:3000
+
+### Variables (fill after login)
+@accessToken =
+@refreshToken =
+@announcementId = 1
+
+### -------------------------------------------------------------------------
+### AUTH
+### -------------------------------------------------------------------------
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "name": "Ivan",
+  "password": "qwerty123"
+}
+
+### Login (demo user: ivan_petrenko / qwerty123)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "qwerty123"
+}
+
+### Current user (copy accessToken from login/register above)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Refresh tokens using the refreshToken cookie
+# (refresh token is stored in HttpOnly cookie "refreshToken")
+POST {{baseUrl}}/auth/refresh
+Cookie: refreshToken={{refreshToken}}
+
+### Logout — revokes refresh token and clears cookie
+POST {{baseUrl}}/auth/logout
+Cookie: refreshToken={{refreshToken}}
+
+### -------------------------------------------------------------------------
+### Rate limit test — run this >10 times within 15 min to get 429
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "ivan_petrenko", "password": "wrong" }
+
+### -------------------------------------------------------------------------
+### ANNOUNCEMENTS
+### -------------------------------------------------------------------------
+
+### List — default pagination (page=1, limit=5)
+GET {{baseUrl}}/announcements
+
+### List — search in title
+GET {{baseUrl}}/announcements?search=iPhone
+
+### List — filter by category
+GET {{baseUrl}}/announcements?category=sale
+
+### List — sort by price asc
+GET {{baseUrl}}/announcements?sortBy=price&order=asc
+
+### List — combined: page 2, limit 10, sale, newest first
+GET {{baseUrl}}/announcements?page=2&limit=10&category=sale&sortBy=createdAt&order=desc
+
+### List — invalid query (expect 400)
+GET {{baseUrl}}/announcements?sortBy=invalidField
+
+### Get one announcement
+GET {{baseUrl}}/announcements/{{announcementId}}
+
+### Get non-existent (expect 404)
+GET {{baseUrl}}/announcements/999999
+
+### Create — JSON, no image (requires access token)
+POST {{baseUrl}}/announcements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "title": "Продам велосипед",
+  "description": "Трек у відмінному стані, майже новий.",
+  "price": 8500,
+  "category": "sale",
+  "contactInfo": "seller@example.com"
+}
+
+### Create — multipart/form-data with image
+POST {{baseUrl}}/announcements
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----NB
+
+------NB
+Content-Disposition: form-data; name="title"
+
+Продам камеру
+------NB
+Content-Disposition: form-data; name="description"
+
+Дзеркальна камера, ідеальний стан, в комплекті об'єктив.
+------NB
+Content-Disposition: form-data; name="price"
+
+12000
+------NB
+Content-Disposition: form-data; name="category"
+
+sale
+------NB
+Content-Disposition: form-data; name="contactInfo"
+
+seller@example.com
+------NB
+Content-Disposition: form-data; name="image"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+< ./public/photo.jpg
+------NB--
+
+### Validation error — title too short (expect 400)
+POST {{baseUrl}}/announcements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "title": "abc",
+  "description": "too short desc",
+  "price": 10,
+  "category": "sale",
+  "contactInfo": "x@y.z"
+}
+
+### Protected route without token (expect 401)
+POST {{baseUrl}}/announcements
+Content-Type: application/json
+
+{
+  "title": "No token here",
+  "description": "This should be rejected with 401.",
+  "price": 100,
+  "category": "sale",
+  "contactInfo": "nobody@example.com"
+}
+
+### Partial update — JSON (owner only)
+PATCH {{baseUrl}}/announcements/{{announcementId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{ "price": 7999 }
+
+### Partial update with new image — multipart
+PATCH {{baseUrl}}/announcements/{{announcementId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----NB
+
+------NB
+Content-Disposition: form-data; name="image"; filename="new.jpg"
+Content-Type: image/jpeg
+
+< ./public/photo.jpg
+------NB--
+
+### Delete (owner only) — expect 204
+DELETE {{baseUrl}}/announcements/{{announcementId}}
+Authorization: Bearer {{accessToken}}

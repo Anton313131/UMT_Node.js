@@ -3,3 +3,9 @@ node_modules
 .env
 
 /generated/prisma
+
+# Local dev DB
+/dev.db*
+
+# Multer temp upload dir
+/uploads

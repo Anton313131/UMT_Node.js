@@ -1,12 +1,23 @@
 const { PrismaClient } = require('@prisma/client');
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+const bcrypt = require('bcryptjs');
 
 const adapter = new PrismaBetterSqlite3({ url: 'file:./dev.db' });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Clear existing announcements to avoid duplicates
+  await prisma.refreshToken.deleteMany();
   await prisma.announcement.deleteMany();
+  await prisma.user.deleteMany();
+
+  const passwordHash = await bcrypt.hash('qwerty123', 10);
+  const demoUser = await prisma.user.create({
+    data: {
+      username: 'ivan_petrenko',
+      name: 'Ivan',
+      password: passwordHash,
+    },
+  });
 
   const announcements = [
     {
@@ -15,7 +26,7 @@ async function main() {
       price: 22000,
       category: "sale",
       contactInfo: "+380971111111",
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) // 15 days ago
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
     },
     {
       title: "Оренда 2-кімнатної квартири",
@@ -133,11 +144,11 @@ async function main() {
 
   for (const item of announcements) {
     await prisma.announcement.create({
-      data: item
+      data: { ...item, userId: demoUser.id }
     });
   }
 
-  console.log("Seeding finished successfully. Created 15 announcements.");
+  console.log(`Seeding finished. Created user ${demoUser.username} and 15 announcements.`);
 }
 
 main()
